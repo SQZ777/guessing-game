@@ -14,7 +14,7 @@ const guessSchema = new mongoose.Schema({
   },
   sessionId: {
     type: String,
-    required: true,
+    required: false, // 改為非必填，因為不再使用 session
     index: true
   },
   revealed: {
