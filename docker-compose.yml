@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  # MongoDB 資料庫
+  mongodb:
+    image: mongo:7
+    container_name: gender-reveal-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      - MONGO_INITDB_DATABASE=gender-reveal
+    networks:
+      - app-network
+
+  # 後端服務
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: gender-reveal-backend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - MONGODB_URI=mongodb://mongodb:27017/gender-reveal
+      - SESSION_SECRET=${SESSION_SECRET:-change-this-secret-key}
+      - ADMIN_TOKEN=${ADMIN_TOKEN:-change-this-admin-token}
+      - ACTUAL_GENDER=${ACTUAL_GENDER:-boy}
+    depends_on:
+      - mongodb
+    networks:
+      - app-network
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+
+  # 前端服務
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: gender-reveal-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+    driver: local
