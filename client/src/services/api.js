@@ -1,7 +1,17 @@
 import axios from 'axios'
 
+// 根據環境決定 API Base URL
+const getBaseURL = () => {
+  // 如果有設定環境變數，使用環境變數（生產環境）
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL
+  }
+  // 開發環境使用相對路徑（透過 Vite proxy）
+  return '/api'
+}
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: getBaseURL(),
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json'

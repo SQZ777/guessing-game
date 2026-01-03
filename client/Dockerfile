@@ -14,6 +14,10 @@ RUN npm ci
 # 複製源碼
 COPY . .
 
+# 設定構建時的環境變數（Zeabur 會自動注入）
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
+
 # 構建生產版本
 RUN npm run build
 

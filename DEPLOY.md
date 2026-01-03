@@ -38,11 +38,16 @@
    - Root Directory 設為 `client`
    - Zeabur 會自動構建前端
 
-7. **設定前端環境變數**
-   - 如果需要指定 API 端點，在構建時設定：
+7. **設定前端環境變數（重要！）**
+   - 在前端服務的環境變數中設定：
    ```
-   VITE_API_URL=<後端服務的 URL>
+   VITE_API_URL=http://guessing-game-res.zeabur.internal:8080/api
    ```
+   - **注意**：
+     - `guessing-game-res` 是你的後端服務名稱（請根據實際服務名稱調整）
+     - `.zeabur.internal` 是 Zeabur 內部網路域名
+     - `:8080` 是後端服務的端口（請確認你的後端服務端口）
+     - 這個 URL 讓前端可以直接透過 Zeabur 內部網路與後端通訊，更快且更安全
 
 8. **綁定域名**
    - 點擊服務卡片
@@ -75,8 +80,11 @@
 - `ADMIN_TOKEN` - 管理員 Token
 - `ACTUAL_GENDER` - 實際性別（`boy` 或 `girl`）
 
-### 前端環境變數（可選）
-- `VITE_API_URL` - 後端 API 地址（如果前後端不在同一域名）
+### 前端環境變數（必要）
+- `VITE_API_URL` - 後端 API 完整地址
+  - **Zeabur 範例**：`http://guessing-game-res.zeabur.internal:8080/api`
+  - **本地開發**：不需要設定（使用 Vite proxy）
+  - **注意**：請將 `guessing-game-res` 改為你的實際後端服務名稱
 
 ## 🔧 本地測試 Docker
 
@@ -131,13 +139,28 @@ openssl rand -base64 32
 # Node.js
 node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 ```
+在 Zeabur 上部署時，需要更新後端 CORS 設定以允許前端域名：
 
-## 🌐 CORS 設定
+編輯 `server/src/app.js`，將 CORS 配置改為：
 
-如果前後端分開部署在不同域名，需要更新後端 CORS 設定：
+```javascript
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['https://your-frontend-domain.zeabur.app', 'https://your-custom-domain.com']
+    : 'http://localhost:5173',
+  credentials: true
+}));
+```
 
-編輯 `server/src/app.js`：
+或者在 Zeabur 上設定環境變數：
+```
+CORS_ORIGIN=https://your-frontend-domain.zeabur.app
+```
 
+然後在 `server/src/app.js` 中使用：
+```javascript
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || 'http://localhost:5173
 ```javascript
 app.use(cors({
   origin: 'https://your-frontend-domain.zeabur.app',
