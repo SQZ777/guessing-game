@@ -41,13 +41,24 @@ exports.createGuess = async (req, res) => {
     req.session.guessId = newGuess._id.toString();
     req.session.revealed = false;
 
-    res.status(201).json({
-      success: true,
-      data: {
-        guessId: newGuess._id,
-        name: newGuess.name,
-        guess: newGuess.guess
+    // 明確保存 session（確保 Set-Cookie 被發送）
+    req.session.save((err) => {
+      if (err) {
+        console.error('Session 保存錯誤:', err);
+        return res.status(500).json({
+          success: false,
+          error: '伺服器錯誤'
+        });
       }
+
+      res.status(201).json({
+        success: true,
+        data: {
+          guessId: newGuess._id,
+          name: newGuess.name,
+          guess: newGuess.guess
+        }
+      });
     });
   } catch (error) {
     console.error('建立猜測錯誤:', error);
@@ -117,8 +128,19 @@ exports.markRevealed = async (req, res) => {
     // 更新 session
     req.session.revealed = true;
 
-    res.json({
-      success: true
+    // 明確保存 session
+    req.session.save((err) => {
+      if (err) {
+        console.error('Session 保存錯誤:', err);
+        return res.status(500).json({
+          success: false,
+          error: '伺服器錯誤'
+        });
+      }
+
+      res.json({
+        success: true
+      });
     });
   } catch (error) {
     console.error('標記揭露錯誤:', error);
