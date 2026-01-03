@@ -73,6 +73,7 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useGuessStore } from '@/stores/guessStore'
+import { storageAccessManager } from '@/utils/storageAccess'
 
 const router = useRouter()
 const guessStore = useGuessStore()
@@ -94,12 +95,20 @@ const handleSubmit = async () => {
 
   errorMessage.value = ''
 
-  const success = await guessStore.submitGuess(name.value.trim(), selectedGender.value)
+  try {
+    // 在用戶互動中請求 Storage Access（解決 Chrome 第三方 Cookie 問題）
+    await storageAccessManager.withStorageAccess(async () => {
+      const success = await guessStore.submitGuess(name.value.trim(), selectedGender.value)
 
-  if (success) {
-    router.push('/reveal')
-  } else {
-    errorMessage.value = guessStore.error || '提交失敗，請稍後再試'
+      if (success) {
+        router.push('/reveal')
+      } else {
+        errorMessage.value = guessStore.error || '提交失敗，請稍後再試'
+      }
+    })
+  } catch (error) {
+    console.error('提交猜測失敗:', error)
+    errorMessage.value = '提交失敗，請檢查瀏覽器 Cookie 設定'
   }
 }
 </script>
