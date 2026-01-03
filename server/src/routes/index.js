@@ -4,15 +4,14 @@ const router = express.Router();
 const guessController = require('../controllers/guessController');
 const revealController = require('../controllers/revealController');
 const statisticsController = require('../controllers/statisticsController');
-const { requireGuessed } = require('../middleware/sessionCheck');
 
 // 猜測相關路由
 router.post('/guess', guessController.createGuess);
 router.get('/guess/check', guessController.checkGuess);
-router.put('/guess/:guessId/revealed', requireGuessed, guessController.markRevealed);
+router.put('/guess/:guessId/revealed', guessController.markRevealed);
 
 // 揭露相關路由
-router.get('/reveal', requireGuessed, revealController.getReveal);
+router.get('/reveal', revealController.getReveal);
 
 // 統計相關路由
 router.get('/statistics', statisticsController.getStatistics);
