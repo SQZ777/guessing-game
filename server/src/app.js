@@ -53,6 +53,17 @@ app.use(express.urlencoded({ extended: true }));
 // Session
 app.use(session(sessionConfig));
 
+// Session 日誌中間件（調試用）
+app.use((req, res, next) => {
+  console.log('=== Request ===');
+  console.log('URL:', req.method, req.url);
+  console.log('Origin:', req.headers.origin);
+  console.log('Cookie:', req.headers.cookie);
+  console.log('SessionID:', req.sessionID);
+  console.log('Session:', req.session);
+  next();
+});
+
 // API 路由
 app.use('/api', routes);
 

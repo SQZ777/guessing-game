@@ -41,6 +41,12 @@ exports.createGuess = async (req, res) => {
     req.session.guessId = newGuess._id.toString();
     req.session.revealed = false;
 
+    console.log('準備保存 session:', {
+      sessionID: req.sessionID,
+      hasGuessed: req.session.hasGuessed,
+      guessId: req.session.guessId
+    });
+
     // 明確保存 session（確保 Set-Cookie 被發送）
     req.session.save((err) => {
       if (err) {
@@ -51,6 +57,8 @@ exports.createGuess = async (req, res) => {
         });
       }
 
+      console.log('Session 保存成功！');
+      
       res.status(201).json({
         success: true,
         data: {
