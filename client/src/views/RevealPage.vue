@@ -59,14 +59,23 @@ onMounted(async () => {
   try {
     const response = await revealAPI.get()
     if (response.data.success) {
+      const data = response.data.data
+      
+      // 如果沒有猜測記錄，跳轉回首頁
+      if (!data.hasGuessed) {
+        console.warn('尚未進行猜測，跳轉回首頁')
+        router.push('/')
+        return
+      }
+      
       revealData.value = {
-        gender: response.data.data.gender,
-        isCorrect: response.data.data.isCorrect
+        gender: data.gender,
+        isCorrect: data.isCorrect
       }
     }
   } catch (error) {
     console.error('載入揭露資料失敗:', error)
-    // 如果載入失敗，可能是尚未猜測，跳轉回首頁
+    // 如果載入失敗，跳轉回首頁
     router.push('/')
   }
 })
