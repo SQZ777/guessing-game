@@ -6,14 +6,6 @@ exports.createGuess = async (req, res) => {
   try {
     const { name, guess } = req.body;
 
-    // 檢查是否已經猜測過
-    if (req.session.hasGuessed) {
-      return res.status(400).json({
-        success: false,
-        error: '已經猜測過了'
-      });
-    }
-
     // 驗證輸入
     if (!name || name.trim().length === 0) {
       return res.status(400).json({
@@ -29,44 +21,46 @@ exports.createGuess = async (req, res) => {
       });
     }
 
-    // 建立猜測記錄
-    const newGuess = await Guess.create({
-      name: name.trim(),
-      guess,
-      sessionId: req.sessionID
+    const trimmedName = name.trim();
+
+    // 檢查名字是否已經猜測過（不區分大小寫）
+    const existingGuess = await Guess.findOne({ 
+      name: { $regex: new RegExp(`^${trimmedName}$`, 'i') }
     });
 
-    // 更新 session
-    req.session.hasGuessed = true;
-    req.session.guessId = newGuess._id.toString();
-    req.session.revealed = false;
-
-    console.log('準備保存 session:', {
-      sessionID: req.sessionID,
-      hasGuessed: req.session.hasGuessed,
-      guessId: req.session.guessId
-    });
-
-    // 明確保存 session（確保 Set-Cookie 被發送）
-    req.session.save((err) => {
-      if (err) {
-        console.error('Session 保存錯誤:', err);
-        return res.status(500).json({
-          success: false,
-          error: '伺服器錯誤'
-        });
-      }
-
-      console.log('Session 保存成功！');
-      
-      res.status(201).json({
-        success: true,
+    if (existingGuess) {
+      return res.status(400).json({
+        success: false,
+        error: '此名字已經猜測過了',
+        hasGuessed: true,
         data: {
-          guessId: newGuess._id,
-          name: newGuess.name,
-          guess: newGuess.guess
+          guessId: existingGuess._id,
+          name: existingGuess.name,
+          guess: existingGuess.guess,
+          revealed: existingGuess.revealed
         }
       });
+    }
+
+    // 建立猜測記錄
+    const newGuess = await Guess.create({
+      name: trimmedName,
+      guess
+    });
+
+    console.log('新猜測記錄:', {
+      guessId: newGuess._id,
+      name: newGuess.name,
+      guess: newGuess.guess
+    });
+
+    res.status(201).json({
+      success: true,
+      data: {
+        guessId: newGuess._id,
+        name: newGuess.name,
+        guess: newGuess.guess
+      }
     });
   } catch (error) {
     console.error('建立猜測錯誤:', error);
@@ -77,19 +71,29 @@ exports.createGuess = async (req, res) => {
   }
 };
 
-// 檢查是否已猜測
+// 檢查是否已猜測（通過名字）
 exports.checkGuess = async (req, res) => {
   try {
-    if (req.session.hasGuessed && req.session.guessId) {
-      const guess = await Guess.findById(req.session.guessId);
-      
-      if (guess) {
-        return res.json({
-          hasGuessed: true,
-          guessId: guess._id,
-          revealed: guess.revealed
-        });
-      }
+    const { name } = req.query;
+
+    if (!name || name.trim().length === 0) {
+      return res.json({
+        hasGuessed: false
+      });
+    }
+
+    // 查找名字對應的猜測記錄（不區分大小寫）
+    const guess = await Guess.findOne({ 
+      name: { $regex: new RegExp(`^${name.trim()}$`, 'i') }
+    });
+
+    if (guess) {
+      return res.json({
+        hasGuessed: true,
+        guessId: guess._id,
+        revealed: guess.revealed,
+        guess: guess.guess
+      });
     }
 
     res.json({
@@ -104,24 +108,23 @@ exports.checkGuess = async (req, res) => {
   }
 };
 
-// 標記已揭露
+// 標記已揭露（通過名字或 guessId）
 exports.markRevealed = async (req, res) => {
   try {
     const { guessId } = req.params;
+    const { name } = req.body;
 
-    // 驗證是否為本人的猜測
-    if (req.session.guessId !== guessId) {
-      return res.status(403).json({
-        success: false,
-        error: '無權限操作'
+    let guess;
+
+    // 優先使用 guessId，否則使用名字
+    if (guessId) {
+      guess = await Guess.findById(guessId);
+    } else if (name) {
+      guess = await Guess.findOne({ 
+        name: { $regex: new RegExp(`^${name.trim()}$`, 'i') }
       });
     }
 
-    // 取得實際性別
-    const actualGender = await Setting.getValue('actualGender', process.env.ACTUAL_GENDER || 'boy');
-
-    // 更新猜測記錄
-    const guess = await Guess.findById(guessId);
     if (!guess) {
       return res.status(404).json({
         success: false,
@@ -129,26 +132,20 @@ exports.markRevealed = async (req, res) => {
       });
     }
 
+    // 取得實際性別
+    const actualGender = await Setting.getValue('actualGender', process.env.ACTUAL_GENDER || 'boy');
+
+    // 更新猜測記錄
     guess.revealed = true;
     guess.checkCorrect(actualGender);
     await guess.save();
 
-    // 更新 session
-    req.session.revealed = true;
-
-    // 明確保存 session
-    req.session.save((err) => {
-      if (err) {
-        console.error('Session 保存錯誤:', err);
-        return res.status(500).json({
-          success: false,
-          error: '伺服器錯誤'
-        });
+    res.json({
+      success: true,
+      data: {
+        guessId: guess._id,
+        revealed: true
       }
-
-      res.json({
-        success: true
-      });
     });
   } catch (error) {
     console.error('標記揭露錯誤:', error);

@@ -56,8 +56,17 @@ const revealData = ref({
 
 // 載入揭露資料
 onMounted(async () => {
+  // 從 store 獲取用戶名
+  const userName = guessStore.userName
+  
+  if (!userName) {
+    console.warn('尚未進行猜測，跳轉回首頁')
+    router.push('/')
+    return
+  }
+
   try {
-    const response = await revealAPI.get()
+    const response = await revealAPI.get(userName)
     if (response.data.success) {
       const data = response.data.data
       

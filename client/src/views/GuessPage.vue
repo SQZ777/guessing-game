@@ -70,16 +70,15 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useGuessStore } from '@/stores/guessStore'
-import { storageAccessManager } from '@/utils/storageAccess'
 
 const router = useRouter()
 const guessStore = useGuessStore()
 
 // 表單資料
-const name = ref('')
+const name = ref(guessStore.userName || '')
 const selectedGender = ref('')
 const errorMessage = ref('')
 
@@ -89,26 +88,37 @@ const isValid = computed(() => {
   return name.value.trim().length > 0 && selectedGender.value !== ''
 })
 
+// 初始化時檢查是否已猜測
+onMounted(async () => {
+  if (guessStore.userName) {
+    await guessStore.checkGuessStatus()
+    
+    // 如果已猜測，跳轉到 reveal 頁面
+    if (guessStore.hasGuessed) {
+      router.push('/reveal')
+    }
+  }
+})
+
 // 提交表單
 const handleSubmit = async () => {
   if (!isValid.value) return
 
   errorMessage.value = ''
 
-  try {
-    // 在用戶互動中請求 Storage Access（解決 Chrome 第三方 Cookie 問題）
-    await storageAccessManager.withStorageAccess(async () => {
-      const success = await guessStore.submitGuess(name.value.trim(), selectedGender.value)
+  const success = await guessStore.submitGuess(name.value.trim(), selectedGender.value)
 
-      if (success) {
+  if (success) {
+    router.push('/reveal')
+  } else {
+    errorMessage.value = guessStore.error || '提交失敗，請稍後再試'
+    
+    // 如果是因為已經猜測過，跳轉到 reveal
+    if (guessStore.hasGuessed) {
+      setTimeout(() => {
         router.push('/reveal')
-      } else {
-        errorMessage.value = guessStore.error || '提交失敗，請稍後再試'
-      }
-    })
-  } catch (error) {
-    console.error('提交猜測失敗:', error)
-    errorMessage.value = '提交失敗，請檢查瀏覽器 Cookie 設定'
+      }, 1500)
+    }
   }
 }
 </script>

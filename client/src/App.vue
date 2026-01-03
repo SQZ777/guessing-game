@@ -5,14 +5,11 @@
         <component :is="Component" />
       </transition>
     </router-view>
-    
-    <!-- Cookie 提示組件 -->
-    <CookieNotice />
   </div>
 </template>
 
 <script setup>
-import CookieNotice from '@/components/CookieNotice.vue'
+// App 根組件
 </script>
 
 <style lang="scss">

@@ -25,17 +25,23 @@ export const guessAPI = {
   // 提交猜測
   create: (data) => api.post('/guess', data),
   
-  // 檢查是否已猜測
-  check: () => api.get('/guess/check'),
+  // 檢查是否已猜測（通過名字）
+  check: (name) => api.get('/guess/check', { params: { name } }),
   
   // 標記已揭露
-  markRevealed: (guessId) => api.put(`/guess/${guessId}/revealed`)
+  markRevealed: (guessId, name) => {
+    if (guessId) {
+      return api.put(`/guess/${guessId}/revealed`, { name })
+    } else {
+      return api.put('/guess/revealed', { name })
+    }
+  }
 }
 
 // 揭露相關 API
 export const revealAPI = {
-  // 取得揭露結果
-  get: () => api.get('/reveal')
+  // 取得揭露結果（通過名字）
+  get: (name) => api.get('/reveal', { params: { name } })
 }
 
 // 統計相關 API
