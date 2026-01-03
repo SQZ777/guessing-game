@@ -36,7 +36,7 @@
             </div>
 
             <!-- 抓取的禮物 -->
-            <div v-if="hasGift" class="grabbed-gift">🎁</div>
+            <div v-if="hasGift" class="grabbed-gift">{{ grabbedEmoji }}</div>
           </div>
         </div>
 
@@ -104,6 +104,7 @@ const clawClosed = ref(false)
 const isGrabbing = ref(false)
 const isAnimating = ref(false)
 const hasGift = ref(false)
+const grabbedEmoji = ref('🎁')
 
 // 移動相關
 let moveInterval = null
@@ -111,12 +112,12 @@ const moveSpeed = 2
 
 // 禮物配置
 const gifts = ref([
-  { emoji: '🎁', x: 15, y: 10 },
-  { emoji: '🧸', x: 30, y: 5 },
-  { emoji: '🎀', x: 45, y: 12 },
-  { emoji: '🎁', x: 60, y: 8 },
-  { emoji: '🧸', x: 75, y: 15 },
-  { emoji: '🎀', x: 85, y: 6 },
+  { emoji: '🎁', x: 12, y: 10 },
+  { emoji: '🧸', x: 25, y: 5 },
+  { emoji: '🎀', x: 38, y: 12 },
+  { emoji: '🎁', x: 52, y: 8 },
+  { emoji: '🧸', x: 66, y: 15 },
+  { emoji: '🎀', x: 78, y: 6 },
 ])
 
 // 開始移動
@@ -141,11 +142,32 @@ const stopMove = () => {
   }
 }
 
+// 找到最接近爪子位置的禮物
+const findClosestGift = () => {
+  let closestGift = gifts.value[0]
+  let minDistance = Math.abs(clawPosition.value - closestGift.x)
+  
+  gifts.value.forEach(gift => {
+    const distance = Math.abs(clawPosition.value - gift.x)
+    if (distance < minDistance) {
+      minDistance = distance
+      closestGift = gift
+    }
+  })
+  
+  return closestGift
+}
+
 // 開始抓取動畫
 const startGrab = () => {
   if (isAnimating.value) return
   
   isAnimating.value = true
+  isGrabbing.value = true
+
+  // 找到要抓取的禮物
+  const targetGift = findClosestGift()
+  grabbedEmoji.value = targetGift.emoji
   isGrabbing.value = true
 
   // 動畫序列
@@ -192,6 +214,7 @@ const reset = () => {
   isGrabbing.value = false
   isAnimating.value = false
   hasGift.value = false
+  grabbedEmoji.value = '🎁'
 }
 
 // 清理
