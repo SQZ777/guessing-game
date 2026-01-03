@@ -14,6 +14,15 @@ const PORT = process.env.PORT || 3000;
 // 連接資料庫
 connectDB();
 
+// Trust proxy
+app.set('trust proxy', 1);
+
+// 顯示環境配置
+console.log('環境配置:');
+console.log('- NODE_ENV:', process.env.NODE_ENV);
+console.log('- FRONTEND_URL:', process.env.FRONTEND_URL);
+console.log('- Trust Proxy: true');
+
 // Middleware
 app.use(cors({
   origin: function(origin, callback) {
