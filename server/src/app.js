@@ -16,10 +16,34 @@ connectDB();
 
 // Middleware
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? 'https://sqz777.zeabur.app' 
-    : 'http://localhost:5173',
-  credentials: true
+  origin: function(origin, callback) {
+    // 允許的來源列表
+    const allowedOrigins = [
+      'http://localhost:5173',
+      'http://localhost:3000',
+      process.env.FRONTEND_URL, // Zeabur 前端 URL
+    ].filter(Boolean); // 移除 undefined 值
+
+    // 允許沒有 origin 的請求（如 Postman、伺服器端請求）
+    if (!origin) return callback(null, true);
+    
+    // 允許所有 .zeabur.app 域名（開發/測試方便）
+    if (origin.includes('.zeabur.app')) {
+      return callback(null, true);
+    }
+
+    // 檢查是否在允許列表中
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.warn('CORS 拒絕來源:', origin);
+      callback(new Error('不允許的 CORS 來源'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['set-cookie']
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
