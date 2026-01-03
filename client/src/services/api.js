@@ -4,7 +4,9 @@ import axios from 'axios'
 const getBaseURL = () => {
   // 如果有設定環境變數，使用環境變數（生產環境）
   if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL
+    const url = import.meta.env.VITE_API_URL
+    // 確保 URL 包含 /api 路徑
+    return url.endsWith('/api') ? url : `${url}/api`
   }
   // 開發環境使用相對路徑（透過 Vite proxy）
   return '/api'
