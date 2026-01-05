@@ -4,7 +4,11 @@
       <!-- 標題區域 -->
       <div class="header">
         <h1 class="title">🎉 猜猜寶寶性別 🎉</h1>
-        <p class="subtitle">來猜猜看寶寶是男生還是女生吧！</p>
+        <p class="subtitle">媽媽狀態提示:
+          <span>👉肚子是圓肚 🤰</span>
+          <span>👉變得更愛吃辣 🌶️</span>
+          <span>👉膚況變好 💃</span>
+        </p>
       </div>
 
       <!-- 表單區域 -->
@@ -157,6 +161,11 @@ const handleSubmit = async () => {
 .subtitle {
   font-size: 16px;
   color: #666;
+
+  span {
+    display: block;
+    margin-top: 4px;
+  }
 }
 
 .guess-form {
